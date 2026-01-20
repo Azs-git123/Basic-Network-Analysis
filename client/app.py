@@ -91,6 +91,9 @@ if 'current_job_id' not in st.session_state:
     st.session_state.current_job_id = None
 if 'jobs_history' not in st.session_state:
     st.session_state.jobs_history = []
+# Session state khusus untuk menyimpan path custom rules (BARU)
+if 'custom_rules_path' not in st.session_state:
+    st.session_state.custom_rules_path = None
 
 # =========================
 # Helper Functions
@@ -120,7 +123,7 @@ def main():
     with st.sidebar:
         st.header("⚙️ Configuration")
 
-        # Server config (DEFAULT URL DIGANTI KE PYTHONANYWHERE ANDA)
+        # Server config
         server_url = st.text_input(
             "Server URL",
             value="https://gghz.pythonanywhere.com", 
@@ -157,7 +160,7 @@ def main():
         verbose_mode = st.checkbox("Verbose Mode", value=False)
 
         # =========================
-        # Rules Configuration (FINAL VERSION)
+        # Rules Configuration (UPDATED LOGIC)
         # =========================
         st.subheader("📂 Rules Configuration")
         
@@ -168,7 +171,7 @@ def main():
             horizontal=False
         )
 
-        # Variabel untuk menyimpan path final yang akan dikirim ke engine
+        # Variabel Default (akan berubah jika custom dipilih)
         final_rules_path = "rules" 
 
         if rules_mode == "Default Server Rules":
@@ -176,7 +179,7 @@ def main():
             final_rules_path = "rules"
 
         else: # Mode Upload Custom
-            st.warning("⚠️ Rules yang diupload akan disimpan sementara di server.")
+            st.warning("⚠️ Upload file .yaml rules Anda.")
             
             uploaded_rules = st.file_uploader(
                 "Upload File YAML Rules", 
@@ -186,25 +189,29 @@ def main():
 
             if uploaded_rules:
                 if st.button("📤 Upload Rules ke Server"):
-                    with st.spinner("Mengirim rules ke server..."):
-                        try:
-                            # Panggil fungsi upload yang baru kita buat
-                            resp = st.session_state.client.upload_custom_rules(uploaded_rules)
-                            
-                            # Simpan path yang diberikan server ke session state
-                            st.session_state['custom_rules_path'] = resp['rules_path']
-                            st.success(f"✅ Sukses! {resp['files_count']} file terupload.")
-                            st.caption(f"Server Path: `{resp['rules_path']}`")
-                            
-                        except Exception as e:
-                            st.error(f"Gagal upload: {e}")
+                    if st.session_state.client:
+                        with st.spinner("Mengirim rules ke server..."):
+                            try:
+                                # Panggil fungsi upload di client.py
+                                resp = st.session_state.client.upload_custom_rules(uploaded_rules)
+                                
+                                # Simpan path yang diberikan server ke session state
+                                st.session_state.custom_rules_path = resp['rules_path']
+                                st.success(f"✅ Sukses! {resp['files_count']} file terupload.")
+                                st.caption(f"Server Path: `{resp['rules_path']}`")
+                                
+                            except Exception as e:
+                                st.error(f"Gagal upload: {e}")
+                    else:
+                        st.error("Mohon Connect ke Server terlebih dahulu!")
 
-            # Jika sudah pernah upload, gunakan path tersebut
-            if 'custom_rules_path' in st.session_state:
-                final_rules_path = st.session_state['custom_rules_path']
-                st.success(f"🔍 Siap menggunakan Custom Rules dari: `{final_rules_path}`")
-            else:
-                st.error("Wajib upload minimal 1 file rules!")
+            # Cek apakah sudah ada path custom yang tersimpan di session
+            if st.session_state.custom_rules_path:
+                final_rules_path = st.session_state.custom_rules_path
+                st.success(f"🔍 Path Rules Aktif: `{final_rules_path}`")
+            elif rules_mode == "Upload Custom Rules (.yaml)":
+                st.error("Wajib upload minimal 1 file rules sebelum analisis!")
+
     # =========================
     # If not connected
     # =========================
@@ -250,84 +257,88 @@ def main():
             )
 
         if analyze_button and uploaded_file is not None:
-            temp_path = f"/tmp/{uploaded_file.name}"
-            # Pastikan direktori tmp ada (untuk server linux/cloud)
-            os.makedirs("/tmp", exist_ok=True)
-            
-            with open(temp_path, "wb") as f:
-                f.write(uploaded_file.getbuffer())
+            # Pengecekan Rules sebelum mulai
+            if rules_mode == "Upload Custom Rules (.yaml)" and not st.session_state.custom_rules_path:
+                st.error("❌ Anda memilih Custom Rules tapi belum mengupload file rules!")
+            else:
+                temp_path = f"/tmp/{uploaded_file.name}"
+                # Pastikan direktori tmp ada (untuk server linux/cloud)
+                os.makedirs("/tmp", exist_ok=True)
+                
+                with open(temp_path, "wb") as f:
+                    f.write(uploaded_file.getbuffer())
 
-            progress_bar = st.progress(0)
-            status_text = st.empty()
+                progress_bar = st.progress(0)
+                status_text = st.empty()
 
-            try:
-                # Upload
-                status_text.text("📤 Uploading file to server...")
-                progress_bar.progress(20)
+                try:
+                    # Upload PCAP
+                    status_text.text("📤 Uploading PCAP to server...")
+                    progress_bar.progress(20)
 
-                upload_result = st.session_state.client.upload_pcap(
-                    temp_path,
-                    abuseipdb_key if abuseipdb_key else None
-                )
-                job_id = upload_result['job_id']
-                st.session_state.current_job_id = job_id
+                    upload_result = st.session_state.client.upload_pcap(
+                        temp_path,
+                        abuseipdb_key if abuseipdb_key else None
+                    )
+                    job_id = upload_result['job_id']
+                    st.session_state.current_job_id = job_id
 
-                status_text.text(f"✅ Uploaded! Job ID: {job_id}")
-                progress_bar.progress(40)
-                time.sleep(1)
+                    status_text.text(f"✅ Uploaded! Job ID: {job_id}")
+                    progress_bar.progress(40)
+                    time.sleep(1)
 
-                # Start analysis
-                status_text.text("🔄 Starting analysis...")
-                progress_bar.progress(50)
+                    # Start analysis (MENGGUNAKAN PATH RULES YANG BENAR)
+                    status_text.text(f"🔄 Starting analysis using rules: {final_rules_path}...")
+                    progress_bar.progress(50)
 
-                st.session_state.client.start_analysis(
-                    job_id,
-                    rules_dir=final_rules_path,
-                    enable_reputation=enable_reputation,
-                    verbose=verbose_mode
-                )
+                    st.session_state.client.start_analysis(
+                        job_id,
+                        rules_dir=final_rules_path, # <--- INI KUNCINYA
+                        enable_reputation=enable_reputation,
+                        verbose=verbose_mode
+                    )
 
-                status_text.text("⚙️ Analysis in progress...")
-                progress_bar.progress(60)
+                    status_text.text("⚙️ Analysis in progress...")
+                    progress_bar.progress(60)
 
-                # Wait for completion
-                status_text.text("⏳ Waiting for completion...")
+                    # Wait for completion
+                    status_text.text("⏳ Waiting for completion...")
 
-                def update_progress(status):
-                    prog = status.get('progress', 0)
-                    progress_bar.progress(60 + int(prog * 0.4))
-                    status_text.text(f"⚙️ Processing: {prog}%")
+                    def update_progress(status):
+                        prog = status.get('progress', 0)
+                        progress_bar.progress(60 + int(prog * 0.4))
+                        status_text.text(f"⚙️ Processing: {prog}%")
 
-                final_status = st.session_state.client.wait_for_completion(
-                    job_id,
-                    poll_interval=2,
-                    callback=update_progress
-                )
+                    final_status = st.session_state.client.wait_for_completion(
+                        job_id,
+                        poll_interval=2,
+                        callback=update_progress
+                    )
 
-                progress_bar.progress(100)
-                status_text.text("✅ Analysis completed!")
+                    progress_bar.progress(100)
+                    status_text.text("✅ Analysis completed!")
 
-                st.balloons()
-                st.success("🎉 Analysis completed successfully!")
+                    st.balloons()
+                    st.success("🎉 Analysis completed successfully!")
 
-                results = st.session_state.client.get_results(job_id)
-                display_results_summary(results)
+                    results = st.session_state.client.get_results(job_id)
+                    display_results_summary(results)
 
-                st.session_state.jobs_history.append({
-                    'job_id': job_id,
-                    'filename': uploaded_file.name,
-                    'timestamp': datetime.now().isoformat(),
-                    'status': 'completed'
-                })
+                    st.session_state.jobs_history.append({
+                        'job_id': job_id,
+                        'filename': uploaded_file.name,
+                        'timestamp': datetime.now().isoformat(),
+                        'status': 'completed'
+                    })
 
-            except Exception as e:
-                st.error(f"❌ Error: {str(e)}")
-                progress_bar.empty()
-                status_text.empty()
+                except Exception as e:
+                    st.error(f"❌ Error: {str(e)}")
+                    progress_bar.empty()
+                    status_text.empty()
 
-            finally:
-                if os.path.exists(temp_path):
-                    os.remove(temp_path)
+                finally:
+                    if os.path.exists(temp_path):
+                        os.remove(temp_path)
 
     # =========================
     # Tab 2: Job Status
