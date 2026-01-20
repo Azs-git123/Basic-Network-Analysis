@@ -1,0 +1,15 @@
+# Abaikan folder sampah runtime
+outputs/
+uploads/
+analysis_results/
+__pycache__/
+*.py[cod]
+
+# Abaikan file sistem/IDE
+.DS_Store
+.vscode/
+.idea/
+
+# PENTING: Jangan abaikan database threat_intel.db
+# Karena kita ingin database ini "Pre-filled" agar user langsung pakai.
+!data/threat_intel.db

@@ -1,0 +1,340 @@
+# Web Application Attack Detection Rules
+# Deteksi serangan pada aplikasi web (OWASP Top 10)
+
+# ============================================
+# SQL INJECTION ATTACKS
+# ============================================
+
+- name: "SQL Injection - UNION Based"
+  description: "Deteksi SQL injection menggunakan UNION SELECT"
+  severity: "critical"
+  enabled: true
+  conditions:
+    protocol: "HTTP"
+    payload_regex: "union.*select"
+
+- name: "SQL Injection - Comment Based"
+  description: "Deteksi SQL injection dengan SQL comments"
+  severity: "critical"
+  enabled: true
+  conditions:
+    protocol: "HTTP"
+    payload_regex: "(--|#|/\\*)"
+
+- name: "SQL Injection - OR Based"
+  description: "Deteksi SQL injection dengan OR 1=1"
+  severity: "critical"
+  enabled: true
+  conditions:
+    protocol: "HTTP"
+    payload_regex: "(or\\s+1\\s*=\\s*1|or\\s+'1'\\s*=\\s*'1')"
+
+- name: "SQL Injection - DROP TABLE"
+  description: "Deteksi percobaan DROP TABLE via SQL injection"
+  severity: "critical"
+  enabled: true
+  conditions:
+    protocol: "HTTP"
+    payload_regex: "drop\\s+(table|database)"
+
+- name: "SQL Injection - INSERT/UPDATE"
+  description: "Deteksi percobaan modifikasi data via SQL injection"
+  severity: "critical"
+  enabled: true
+  conditions:
+    protocol: "HTTP"
+    payload_regex: "(insert\\s+into|update\\s+.*set)"
+
+# ============================================
+# CROSS-SITE SCRIPTING (XSS)
+# ============================================
+
+- name: "XSS Attack - Script Tag"
+  description: "Deteksi XSS menggunakan <script> tag"
+  severity: "high"
+  enabled: true
+  conditions:
+    protocol: "HTTP"
+    payload_regex: "<script[^>]*>"
+
+- name: "XSS Attack - JavaScript Event"
+  description: "Deteksi XSS via JavaScript event handlers"
+  severity: "high"
+  enabled: true
+  conditions:
+    protocol: "HTTP"
+    payload_regex: "on(load|error|click|mouse)\\s*="
+
+- name: "XSS Attack - IMG Tag"
+  description: "Deteksi XSS menggunakan tag img dengan onerror"
+  severity: "high"
+  enabled: true
+  conditions:
+    protocol: "HTTP"
+    payload_regex: "<img.*onerror"
+
+- name: "XSS Attack - JavaScript Protocol"
+  description: "Deteksi XSS menggunakan javascript: protocol"
+  severity: "high"
+  enabled: true
+  conditions:
+    protocol: "HTTP"
+    payload_contains: "javascript:"
+
+# ============================================
+# COMMAND INJECTION
+# ============================================
+
+- name: "Command Injection - Shell Commands"
+  description: "Deteksi command injection dengan shell commands"
+  severity: "critical"
+  enabled: true
+  conditions:
+    protocol: "HTTP"
+    payload_regex: "(;|\\||&&)\\s*(ls|cat|wget|curl|bash|sh)"
+
+- name: "Command Injection - Pipe"
+  description: "Deteksi command injection menggunakan pipe"
+  severity: "critical"
+  enabled: true
+  conditions:
+    protocol: "HTTP"
+    payload_regex: "\\|\\s*(nc|netcat|bash)"
+
+# ============================================
+# PATH TRAVERSAL
+# ============================================
+
+- name: "Path Traversal - Directory Traversal"
+  description: "Deteksi percobaan akses file via directory traversal"
+  severity: "high"
+  enabled: true
+  conditions:
+    protocol: "HTTP"
+    payload_contains: "../"
+
+- name: "Path Traversal - Windows"
+  description: "Deteksi path traversal di Windows sistem"
+  severity: "high"
+  enabled: true
+  conditions:
+    protocol: "HTTP"
+    payload_contains: "..\\"
+
+- name: "Path Traversal - Encoded"
+  description: "Deteksi path traversal dengan URL encoding"
+  severity: "high"
+  enabled: true
+  conditions:
+    protocol: "HTTP"
+    payload_regex: "%2e%2e(%2f|%5c)"
+
+- name: "Sensitive File Access - /etc/passwd"
+  description: "Deteksi percobaan akses /etc/passwd"
+  severity: "critical"
+  enabled: true
+  conditions:
+    protocol: "HTTP"
+    payload_contains: "/etc/passwd"
+
+- name: "Sensitive File Access - Windows SAM"
+  description: "Deteksi percobaan akses Windows SAM file"
+  severity: "critical"
+  enabled: true
+  conditions:
+    protocol: "HTTP"
+    payload_contains: "windows/system32/config/sam"
+
+# ============================================
+# LOCAL/REMOTE FILE INCLUSION
+# ============================================
+
+- name: "Local File Inclusion (LFI)"
+  description: "Deteksi LFI attack via file parameter"
+  severity: "critical"
+  enabled: true
+  conditions:
+    protocol: "HTTP"
+    payload_regex: "(file|page|include)=.*\\.\\./"
+
+- name: "Remote File Inclusion (RFI)"
+  description: "Deteksi RFI attack dengan remote URL"
+  severity: "critical"
+  enabled: true
+  conditions:
+    protocol: "HTTP"
+    payload_regex: "(file|page|include)=https?://"
+
+- name: "PHP Filter Wrapper"
+  description: "Deteksi penggunaan PHP filter wrapper untuk LFI"
+  severity: "high"
+  enabled: true
+  conditions:
+    protocol: "HTTP"
+    payload_contains: "php://filter"
+
+# ============================================
+# WEB SCANNERS & ENUMERATION
+# ============================================
+
+- name: "Nikto Web Scanner"
+  description: "Deteksi Nikto web vulnerability scanner"
+  severity: "medium"
+  enabled: true
+  conditions:
+    protocol: "HTTP"
+    payload_contains: "Nikto"
+
+- name: "SQLMap Scanner"
+  description: "Deteksi SQLMap automated SQL injection tool"
+  severity: "high"
+  enabled: true
+  conditions:
+    protocol: "HTTP"
+    payload_contains: "sqlmap"
+
+- name: "Nmap NSE Scripts"
+  description: "Deteksi Nmap NSE web scanning scripts"
+  severity: "medium"
+  enabled: true
+  conditions:
+    protocol: "HTTP"
+    payload_contains: "Nmap Scripting Engine"
+
+- name: "Burp Suite Scanner"
+  description: "Deteksi Burp Suite web scanner"
+  severity: "low"
+  enabled: true
+  conditions:
+    protocol: "HTTP"
+    payload_contains: "Burp"
+
+- name: "OWASP ZAP Scanner"
+  description: "Deteksi OWASP ZAP security scanner"
+  severity: "low"
+  enabled: true
+  conditions:
+    protocol: "HTTP"
+    payload_contains: "OWASP ZAP"
+
+# ============================================
+# ADMIN PANEL ACCESS
+# ============================================
+
+- name: "Admin Panel Access - /admin"
+  description: "Deteksi akses ke admin panel"
+  severity: "medium"
+  enabled: true
+  conditions:
+    protocol: "HTTP"
+    http_path_contains: "/admin"
+
+- name: "Admin Panel Access - /wp-admin"
+  description: "Deteksi akses ke WordPress admin"
+  severity: "medium"
+  enabled: true
+  conditions:
+    protocol: "HTTP"
+    http_path_contains: "/wp-admin"
+
+- name: "PHPMyAdmin Access"
+  description: "Deteksi akses ke PHPMyAdmin"
+  severity: "medium"
+  enabled: true
+  conditions:
+    protocol: "HTTP"
+    http_path_contains: "phpmyadmin"
+
+- name: "cPanel Access"
+  description: "Deteksi akses ke cPanel"
+  severity: "medium"
+  enabled: true
+  conditions:
+    protocol: "HTTP"
+    http_path_contains: "cpanel"
+
+# ============================================
+# SENSITIVE DATA EXPOSURE
+# ============================================
+
+- name: "Backup File Access"
+  description: "Deteksi akses ke backup files (.bak, .old, .backup)"
+  severity: "high"
+  enabled: true
+  conditions:
+    protocol: "HTTP"
+    payload_regex: "\\.(bak|old|backup|zip|tar\\.gz)"
+
+- name: "Git Repository Exposure"
+  description: "Deteksi akses ke .git repository"
+  severity: "high"
+  enabled: true
+  conditions:
+    protocol: "HTTP"
+    http_path_contains: "/.git/"
+
+- name: "Environment File Access"
+  description: "Deteksi akses ke .env configuration file"
+  severity: "critical"
+  enabled: true
+  conditions:
+    protocol: "HTTP"
+    http_path_contains: ".env"
+
+- name: "Config File Access"
+  description: "Deteksi akses ke file konfigurasi sensitif"
+  severity: "high"
+  enabled: true
+  conditions:
+    protocol: "HTTP"
+    payload_regex: "(config|configuration)\\.(php|inc|xml)"
+
+# ============================================
+# UPLOAD ATTACKS
+# ============================================
+
+- name: "PHP Shell Upload"
+  description: "Deteksi upload PHP shell/backdoor"
+  severity: "critical"
+  enabled: true
+  conditions:
+    protocol: "HTTP"
+    http_method: "POST"
+    payload_regex: "(\\.php|\\.phtml|\\.php5)"
+
+- name: "Webshell Upload Attempt"
+  description: "Deteksi upload webshell (c99, r57, etc)"
+  severity: "critical"
+  enabled: true
+  conditions:
+    protocol: "HTTP"
+    payload_regex: "(c99|r57|shell|backdoor)"
+
+# ============================================
+# AUTHENTICATION ATTACKS
+# ============================================
+
+- name: "Default Credentials Attempt"
+  description: "Deteksi percobaan login dengan default credentials"
+  severity: "high"
+  enabled: true
+  conditions:
+    protocol: "HTTP"
+    payload_regex: "(admin:admin|root:root|admin:password)"
+
+- name: "Password in URL"
+  description: "Deteksi password terkirim via GET request"
+  severity: "high"
+  enabled: true
+  conditions:
+    protocol: "HTTP"
+    payload_regex: "(password|passwd|pwd)="
+
+- name: "Login Brute Force"
+  description: "Deteksi POST request ke login endpoints"
+  severity: "medium"
+  enabled: true
+  conditions:
+    protocol: "HTTP"
+    http_method: "POST"
+    http_path_contains: "login"

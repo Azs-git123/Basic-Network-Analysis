@@ -1,0 +1,229 @@
+# Network Attack Detection Rules
+# Deteksi berbagai jenis serangan jaringan umum
+
+# ============================================
+# PORT SCANNING DETECTION
+# ============================================
+
+- name: "SYN Scan Detection"
+  description: "Deteksi port scanning menggunakan SYN packets (Nmap -sS)"
+  severity: "high"
+  enabled: true
+  conditions:
+    protocol: "TCP"
+    tcp_flags: "SYN"
+
+- name: "NULL Scan Detection"
+  description: "Deteksi NULL scan - packet tanpa flags (stealth scan)"
+  severity: "high"
+  enabled: true
+  conditions:
+    protocol: "TCP"
+    tcp_flags: "NONE"
+
+- name: "XMAS Scan Detection"
+  description: "Deteksi XMAS scan - FIN, PSH, URG flags (Nmap -sX)"
+  severity: "high"
+  enabled: true
+  conditions:
+    protocol: "TCP"
+    tcp_flags: "FIN,PSH,URG"
+
+- name: "FIN Scan Detection"
+  description: "Deteksi FIN scan untuk stealth scanning"
+  severity: "high"
+  enabled: true
+  conditions:
+    protocol: "TCP"
+    tcp_flags: "FIN"
+
+# ============================================
+# DOS/DDOS ATTACKS
+# ============================================
+
+- name: "Possible SYN Flood Attack"
+  description: "Deteksi potensi SYN flood (DoS attack)"
+  severity: "critical"
+  enabled: true
+  conditions:
+    protocol: "TCP"
+    tcp_flags: "SYN"
+    payload_size_lt: 100
+
+- name: "ICMP Flood Detection"
+  description: "Deteksi ICMP flood / Ping flood attack"
+  severity: "high"
+  enabled: true
+  conditions:
+    protocol: "ICMP"
+
+- name: "UDP Flood Detection"
+  description: "Deteksi UDP flood attack pada port tinggi"
+  severity: "high"
+  enabled: true
+  conditions:
+    protocol: "UDP"
+    payload_size_gt: 1000
+
+- name: "Large ICMP Packet"
+  description: "Deteksi Ping of Death - ICMP packet besar"
+  severity: "critical"
+  enabled: true
+  conditions:
+    protocol: "ICMP"
+    payload_size_gt: 1500
+
+# ============================================
+# RECONNAISSANCE ATTACKS
+# ============================================
+
+- name: "DNS Zone Transfer Attempt"
+  description: "Deteksi percobaan DNS zone transfer (AXFR)"
+  severity: "high"
+  enabled: true
+  conditions:
+    protocol: "DNS"
+    dst_port: 53
+
+- name: "SNMP Enumeration"
+  description: "Deteksi SNMP enumeration/scanning"
+  severity: "medium"
+  enabled: true
+  conditions:
+    protocol: "UDP"
+    dst_port: 161
+
+- name: "NetBIOS Scanning"
+  description: "Deteksi NetBIOS enumeration attack"
+  severity: "medium"
+  enabled: true
+  conditions:
+    protocol: "UDP"
+    port: 137
+
+- name: "SMB Scanning"
+  description: "Deteksi SMB/CIFS scanning"
+  severity: "medium"
+  enabled: true
+  conditions:
+    protocol: "TCP"
+    port: 445
+
+# ============================================
+# BRUTE FORCE ATTACKS
+# ============================================
+
+- name: "SSH Brute Force Attempt"
+  description: "Deteksi percobaan brute force SSH"
+  severity: "critical"
+  enabled: true
+  conditions:
+    protocol: "TCP"
+    dst_port: 22
+
+- name: "FTP Brute Force Attempt"
+  description: "Deteksi login attempts ke FTP"
+  severity: "high"
+  enabled: true
+  conditions:
+    protocol: "TCP"
+    dst_port: 21
+
+- name: "Telnet Access Attempt"
+  description: "Deteksi akses Telnet (insecure protocol)"
+  severity: "critical"
+  enabled: true
+  conditions:
+    protocol: "TCP"
+    port: 23
+
+- name: "RDP Brute Force"
+  description: "Deteksi percobaan brute force RDP"
+  severity: "critical"
+  enabled: true
+  conditions:
+    protocol: "TCP"
+    dst_port: 3389
+
+- name: "MySQL Brute Force"
+  description: "Deteksi percobaan brute force MySQL"
+  severity: "high"
+  enabled: true
+  conditions:
+    protocol: "TCP"
+    dst_port: 3306
+
+- name: "PostgreSQL Access"
+  description: "Deteksi akses ke PostgreSQL database"
+  severity: "medium"
+  enabled: true
+  conditions:
+    protocol: "TCP"
+    dst_port: 5432
+
+# ============================================
+# MALWARE & BACKDOOR
+# ============================================
+
+- name: "Possible Backdoor - Port 31337"
+  description: "Deteksi koneksi ke port backdoor umum (Back Orifice)"
+  severity: "critical"
+  enabled: true
+  conditions:
+    protocol: "TCP"
+    port: 31337
+
+- name: "Possible Backdoor - Port 12345"
+  description: "Deteksi koneksi ke port NetBus backdoor"
+  severity: "critical"
+  enabled: true
+  conditions:
+    protocol: "TCP"
+    port: 12345
+
+- name: "Possible C2 Communication"
+  description: "Deteksi komunikasi command & control pada port tinggi"
+  severity: "critical"
+  enabled: true
+  conditions:
+    protocol: "TCP"
+    dst_port: 4444
+
+- name: "Metasploit Default Payload Port"
+  description: "Deteksi koneksi ke port Metasploit default (meterpreter)"
+  severity: "critical"
+  enabled: true
+  conditions:
+    protocol: "TCP"
+    dst_port: 4444
+
+# ============================================
+# ARP & NETWORK LAYER ATTACKS
+# ============================================
+
+- name: "Suspicious High Port Activity"
+  description: "Deteksi aktivitas pada port sangat tinggi (>60000)"
+  severity: "medium"
+  enabled: true
+  conditions:
+    protocol: "TCP"
+    dst_port: 65000
+
+# ============================================
+# DATA EXFILTRATION
+# ============================================
+
+- name: "Large Outbound Transfer"
+  description: "Deteksi transfer data keluar berukuran besar"
+  severity: "high"
+  enabled: true
+  conditions:
+    payload_size_gt: 10000
+
+- name: "DNS Tunneling Suspicion"
+  description: "Deteksi potensi DNS tunneling - query panjang"
+  severity: "high"
+  enabled: true
+  conditions:
+    protocol: "DNS"
+    payload_size_gt: 512

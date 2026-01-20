@@ -1,0 +1,246 @@
+# Basic Network Traffic Detection Rules
+# Rules dasar untuk monitoring traffic normal dan suspicious
+
+# ============================================
+# NORMAL TRAFFIC MONITORING
+# ============================================
+
+- name: "SSH Traffic Detection"
+  description: "Monitor SSH connections"
+  severity: "low"
+  enabled: true
+  conditions:
+    protocol: "TCP"
+    port: 22
+
+- name: "HTTP Traffic"
+  description: "Monitor HTTP traffic on standard port"
+  severity: "low"
+  enabled: true
+  conditions:
+    protocol: "TCP"
+    dst_port: 80
+
+- name: "HTTPS Traffic"
+  description: "Monitor HTTPS traffic"
+  severity: "low"
+  enabled: true
+  conditions:
+    protocol: "TCP"
+    dst_port: 443
+
+- name: "DNS Queries"
+  description: "Monitor DNS query traffic"
+  severity: "low"
+  enabled: true
+  conditions:
+    protocol: "DNS"
+
+- name: "SMTP Email Traffic"
+  description: "Monitor outgoing email traffic"
+  severity: "low"
+  enabled: true
+  conditions:
+    protocol: "TCP"
+    dst_port: 25
+
+# ============================================
+# NON-STANDARD PORTS
+# ============================================
+
+- name: "HTTP on Non-Standard Port"
+  description: "Deteksi HTTP traffic pada port non-standard"
+  severity: "medium"
+  enabled: true
+  conditions:
+    protocol: "HTTP"
+    dst_port: 8080
+
+- name: "Alternate Web Port 8000"
+  description: "Monitor web traffic pada port 8000"
+  severity: "low"
+  enabled: true
+  conditions:
+    protocol: "TCP"
+    dst_port: 8000
+
+- name: "Alternate HTTPS Port"
+  description: "Monitor HTTPS pada port alternatif"
+  severity: "low"
+  enabled: true
+  conditions:
+    protocol: "TCP"
+    dst_port: 8443
+
+# ============================================
+# LARGE DATA TRANSFERS
+# ============================================
+
+- name: "Large Payload Transfer"
+  description: "Deteksi transfer payload besar (>5KB)"
+  severity: "medium"
+  enabled: true
+  conditions:
+    payload_size_gt: 5000
+
+- name: "Very Large Transfer"
+  description: "Deteksi transfer sangat besar (>50KB)"
+  severity: "high"
+  enabled: true
+  conditions:
+    payload_size_gt: 50000
+
+# ============================================
+# SUSPICIOUS DNS ACTIVITY
+# ============================================
+
+- name: "Suspicious DNS Query Length"
+  description: "Deteksi DNS query dengan panjang tidak normal"
+  severity: "medium"
+  enabled: true
+  conditions:
+    protocol: "DNS"
+    payload_size_gt: 200
+
+- name: "DNS Query to Suspicious Domain"
+  description: "Monitor DNS queries yang mencurigakan"
+  severity: "high"
+  enabled: true
+  conditions:
+    protocol: "DNS"
+    dns_query: "malicious"
+
+# ============================================
+# DATABASE ACCESS
+# ============================================
+
+- name: "MySQL Traffic"
+  description: "Monitor koneksi MySQL database"
+  severity: "medium"
+  enabled: true
+  conditions:
+    protocol: "TCP"
+    dst_port: 3306
+
+- name: "PostgreSQL Traffic"
+  description: "Monitor koneksi PostgreSQL"
+  severity: "medium"
+  enabled: true
+  conditions:
+    protocol: "TCP"
+    dst_port: 5432
+
+- name: "MongoDB Traffic"
+  description: "Monitor koneksi MongoDB"
+  severity: "medium"
+  enabled: true
+  conditions:
+    protocol: "TCP"
+    dst_port: 27017
+
+- name: "Redis Traffic"
+  description: "Monitor koneksi Redis"
+  severity: "medium"
+  enabled: true
+  conditions:
+    protocol: "TCP"
+    dst_port: 6379
+
+# ============================================
+# FTP TRAFFIC
+# ============================================
+
+- name: "FTP Control Connection"
+  description: "Monitor FTP control channel"
+  severity: "low"
+  enabled: true
+  conditions:
+    protocol: "TCP"
+    dst_port: 21
+
+- name: "FTP Data Transfer"
+  description: "Monitor FTP data transfers"
+  severity: "low"
+  enabled: true
+  conditions:
+    protocol: "TCP"
+    dst_port: 20
+
+# ============================================
+# HTTP METHOD MONITORING
+# ============================================
+
+- name: "HTTP POST Request"
+  description: "Monitor HTTP POST untuk data submission"
+  severity: "low"
+  enabled: true
+  conditions:
+    protocol: "HTTP"
+    http_method: "POST"
+
+- name: "HTTP PUT Request"
+  description: "Monitor HTTP PUT request (upload)"
+  severity: "medium"
+  enabled: true
+  conditions:
+    protocol: "HTTP"
+    http_method: "PUT"
+
+- name: "HTTP DELETE Request"
+  description: "Monitor HTTP DELETE request"
+  severity: "medium"
+  enabled: true
+  conditions:
+    protocol: "HTTP"
+    http_method: "DELETE"
+
+# ============================================
+# ICMP TRAFFIC
+# ============================================
+
+- name: "ICMP Ping Traffic"
+  description: "Monitor ICMP echo requests (ping)"
+  severity: "low"
+  enabled: true
+  conditions:
+    protocol: "ICMP"
+
+# ============================================
+# HIGH PORTS
+# ============================================
+
+- name: "High Port Communication"
+  description: "Monitor komunikasi pada port tinggi (>50000)"
+  severity: "medium"
+  enabled: true
+  conditions:
+    protocol: "TCP"
+    dst_port: 55555
+
+# ============================================
+# COMMON SERVICES
+# ============================================
+
+- name: "NTP Traffic"
+  description: "Monitor Network Time Protocol"
+  severity: "low"
+  enabled: true
+  conditions:
+    protocol: "UDP"
+    dst_port: 123
+
+- name: "DHCP Traffic"
+  description: "Monitor DHCP requests"
+  severity: "low"
+  enabled: true
+  conditions:
+    protocol: "UDP"
+    port: 67
+
+- name: "LDAP Traffic"
+  description: "Monitor LDAP directory access"
+  severity: "low"
+  enabled: true
+  conditions:
+    protocol: "TCP"
+    dst_port: 389
