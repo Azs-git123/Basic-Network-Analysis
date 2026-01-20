@@ -282,7 +282,7 @@ def main():
 
                 st.session_state.client.start_analysis(
                     job_id,
-                    rules_dir=rules_dir,
+                    rules_dir=final_rules_path,
                     enable_reputation=enable_reputation,
                     verbose=verbose_mode
                 )
