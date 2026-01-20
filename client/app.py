@@ -157,37 +157,54 @@ def main():
         verbose_mode = st.checkbox("Verbose Mode", value=False)
 
         # =========================
-        # Rules Configuration (UPDATED)
+        # Rules Configuration (FINAL VERSION)
         # =========================
         st.subheader("📂 Rules Configuration")
         
-        st.info("ℹ️ Tentukan folder rules di Server Backend.")
-
-        # Opsi Default vs Custom
+        # Pilihan Mode Rules
         rules_mode = st.radio(
-            "Mode Rules",
-            ["Default Rules", "Custom Path"],
-            horizontal=True
+            "Pilih Sumber Rules:",
+            ["Default Server Rules", "Upload Custom Rules (.yaml)"],
+            horizontal=False
         )
 
-        if rules_mode == "Default Rules":
-            rules_dir = "rules"
-            st.caption(f"Menggunakan path standar: `{rules_dir}`")
-        else:
-            rules_dir = st.text_input(
-                "Server Path", 
-                value="rules",
-                help="Masukkan path folder di server (contoh: rules/custom)"
+        # Variabel untuk menyimpan path final yang akan dikirim ke engine
+        final_rules_path = "rules" 
+
+        if rules_mode == "Default Server Rules":
+            st.info("✅ Menggunakan rules bawaan server (Standard Detection).")
+            final_rules_path = "rules"
+
+        else: # Mode Upload Custom
+            st.warning("⚠️ Rules yang diupload akan disimpan sementara di server.")
+            
+            uploaded_rules = st.file_uploader(
+                "Upload File YAML Rules", 
+                type=['yaml', 'yml'], 
+                accept_multiple_files=True
             )
 
-        st.divider()
+            if uploaded_rules:
+                if st.button("📤 Upload Rules ke Server"):
+                    with st.spinner("Mengirim rules ke server..."):
+                        try:
+                            # Panggil fungsi upload yang baru kita buat
+                            resp = st.session_state.client.upload_custom_rules(uploaded_rules)
+                            
+                            # Simpan path yang diberikan server ke session state
+                            st.session_state['custom_rules_path'] = resp['rules_path']
+                            st.success(f"✅ Sukses! {resp['files_count']} file terupload.")
+                            st.caption(f"Server Path: `{resp['rules_path']}`")
+                            
+                        except Exception as e:
+                            st.error(f"Gagal upload: {e}")
 
-        # Quick Actions
-        st.subheader("⚡ Quick Actions")
-        if st.button("📋 View All Jobs"):
-            st.session_state.page = "jobs_list"
-            st.rerun()
-
+            # Jika sudah pernah upload, gunakan path tersebut
+            if 'custom_rules_path' in st.session_state:
+                final_rules_path = st.session_state['custom_rules_path']
+                st.success(f"🔍 Siap menggunakan Custom Rules dari: `{final_rules_path}`")
+            else:
+                st.error("Wajib upload minimal 1 file rules!")
     # =========================
     # If not connected
     # =========================
