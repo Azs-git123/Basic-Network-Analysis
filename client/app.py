@@ -79,16 +79,6 @@ st.markdown("""
         height: 3em;
         font-weight: 600;
     }
-
-    .stTextInput>div>div>input {
-        border-radius: 6px;
-    }
-
-    .stFileUploader {
-        border: 2px dashed #94a3b8;
-        padding: 1rem;
-        border-radius: 10px;
-    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -116,18 +106,6 @@ def init_client(server_url):
     except Exception as e:
         return False, str(e)
 
-def list_directories(base_path="."):
-    """List only directories inside base_path (simple file manager)"""
-    try:
-        items = []
-        for name in os.listdir(base_path):
-            full = os.path.join(base_path, name)
-            if os.path.isdir(full):
-                items.append(full)
-        return sorted(items)
-    except Exception:
-        return []
-
 # =========================
 # Main App
 # =========================
@@ -142,10 +120,10 @@ def main():
     with st.sidebar:
         st.header("⚙️ Configuration")
 
-        # Server config
+        # Server config (DEFAULT URL DIGANTI KE PYTHONANYWHERE ANDA)
         server_url = st.text_input(
             "Server URL",
-            value="http://localhost:5000",
+            value="https://gghz.pythonanywhere.com", 
             help="URL of Network Analyzer Server"
         )
 
@@ -179,32 +157,28 @@ def main():
         verbose_mode = st.checkbox("Verbose Mode", value=False)
 
         # =========================
-        # Rules Configuration
+        # Rules Configuration (UPDATED)
         # =========================
         st.subheader("📂 Rules Configuration")
         
-        st.info("ℹ️ Masukkan nama folder rules yang ada di Server Backend.")
+        st.info("ℹ️ Tentukan folder rules di Server Backend.")
 
         # Opsi Default vs Custom
         rules_mode = st.radio(
-            "Mode",
+            "Mode Rules",
             ["Default Rules", "Custom Path"],
             horizontal=True
         )
 
         if rules_mode == "Default Rules":
-            # Ini mengarah ke folder 'rules' standar di server PythonAnywhere Anda
             rules_dir = "rules"
-            st.success(f"Menggunakan rules bawaan: `{rules_dir}`")
+            st.caption(f"Menggunakan path standar: `{rules_dir}`")
         else:
-            # User bisa mengetik manual jika admin membuat folder baru di server
             rules_dir = st.text_input(
                 "Server Path", 
                 value="rules",
-                help="Contoh: 'rules/custom' atau 'rules/malware'"
+                help="Masukkan path folder di server (contoh: rules/custom)"
             )
-            st.caption(f"Target Path di Server: `{rules_dir}`")
-
 
         st.divider()
 
@@ -219,27 +193,7 @@ def main():
     # =========================
     if st.session_state.client is None:
         st.warning("⚠️ Please connect to server first using the sidebar")
-        st.info("💡 Make sure the server is running at the specified URL")
-
-        with st.expander("📖 Quick Start Guide"):
-            st.markdown("""
-            ### How to get started:
-
-            1. **Start the Server**
-               ```bash
-               cd server/
-               python app.py
-               ```
-
-            2. **Connect Client**
-               - Enter server URL (default: http://localhost:5000)
-               - Click "Connect to Server"
-
-            3. **Upload & Analyze**
-               - Use the Upload tab to submit PCAP files
-               - Monitor progress in real-time
-               - Download results when complete
-            """)
+        st.info("💡 Klik tombol 'Connect to Server' di sidebar kiri.")
         return
 
     # =========================
@@ -280,6 +234,9 @@ def main():
 
         if analyze_button and uploaded_file is not None:
             temp_path = f"/tmp/{uploaded_file.name}"
+            # Pastikan direktori tmp ada (untuk server linux/cloud)
+            os.makedirs("/tmp", exist_ok=True)
+            
             with open(temp_path, "wb") as f:
                 f.write(uploaded_file.getbuffer())
 
@@ -444,7 +401,9 @@ def main():
                         with col1:
                             st.text(f"📄 {filename}")
                         with col2:
-                            download_url = f"{st.session_state.client.server_url}/api/download/{job_id_download}/{filename}"
+                            # Gunakan URL Server yang sedang aktif di session state, atau default
+                            base_url = st.session_state.client.server_url if st.session_state.client else "http://localhost:5000"
+                            download_url = f"{base_url}/api/download/{job_id_download}/{filename}"
                             st.markdown(f"[⬇️ Download]({download_url})")
 
                 except Exception as e:
@@ -452,9 +411,8 @@ def main():
             else:
                 st.warning("⚠️ Please enter a Job ID")
 
-
 # =========================
-# Display Helpers (UNCHANGED LOGIC)
+# Display Helpers
 # =========================
 
 def display_job_status(status):
