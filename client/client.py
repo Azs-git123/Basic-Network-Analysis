@@ -289,3 +289,30 @@ class NetworkAnalyzerClient:
         
         results = self.get_results(job_id)
         return results
+
+    def upload_custom_rules(self, rule_files):
+        """
+        Uploads custom rule files (YAML) to the server.
+        Args:
+            rule_files: List of file-like objects (from st.file_uploader)
+        Returns:
+            dict: Server response containing 'rules_path'
+        """
+        url = f"{self.server_url}/api/upload_rules"
+        
+        # Siapkan list tuple untuk request multipart/form-data
+        files_payload = []
+        for f in rule_files:
+            # f.getvalue() mengambil isi bytes file dari Streamlit uploader
+            # Kita perlu reset pointer file agar bisa dibaca dari awal
+            f.seek(0) 
+            files_payload.append(('files', (f.name, f.getvalue(), 'application/x-yaml')))
+
+        try:
+            response = requests.post(url, files=files_payload)
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            if hasattr(e.response, 'text'):
+                raise Exception(f"Upload failed: {e.response.text}")
+            raise Exception(f"Connection error: {str(e)}")
