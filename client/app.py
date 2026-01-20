@@ -179,42 +179,32 @@ def main():
         verbose_mode = st.checkbox("Verbose Mode", value=False)
 
         # =========================
-        # Rules Directory Browser
+        # Rules Configuration
         # =========================
-        st.subheader("📂 Rules Directory")
+        st.subheader("📂 Rules Configuration")
+        
+        st.info("ℹ️ Masukkan nama folder rules yang ada di Server Backend.")
 
-        base_rules_path = st.text_input(
-            "Base Rules Path",
-            value=".",
-            help="Base path to browse rule directories"
+        # Opsi Default vs Custom
+        rules_mode = st.radio(
+            "Mode",
+            ["Default Rules", "Custom Path"],
+            horizontal=True
         )
 
-        available_dirs = list_directories(base_rules_path)
-
-        if available_dirs:
-            selected_dir = st.selectbox(
-                "Select Rules Folder",
-                available_dirs,
-                help="Choose directory that contains your YAML rules"
-            )
-            rules_dir = selected_dir
-            st.success(f"Using rules directory:\n{rules_dir}")
+        if rules_mode == "Default Rules":
+            # Ini mengarah ke folder 'rules' standar di server PythonAnywhere Anda
+            rules_dir = "rules"
+            st.success(f"Menggunakan rules bawaan: `{rules_dir}`")
         else:
-            st.warning("No directories found in this path.")
-            rules_dir = st.text_input("Manual Rules Directory", value="rules")
+            # User bisa mengetik manual jika admin membuat folder baru di server
+            rules_dir = st.text_input(
+                "Server Path", 
+                value="rules",
+                help="Contoh: 'rules/custom' atau 'rules/malware'"
+            )
+            st.caption(f"Target Path di Server: `{rules_dir}`")
 
-        # Preview rule files
-        if os.path.isdir(rules_dir):
-            rule_files = [
-                f for f in os.listdir(rules_dir)
-                if f.endswith(('.yml', '.yaml', '.json'))
-            ]
-            with st.expander("📄 Preview Rule Files"):
-                if rule_files:
-                    for f in rule_files:
-                        st.text(f"• {f}")
-                else:
-                    st.info("No rule files found in this directory.")
 
         st.divider()
 
