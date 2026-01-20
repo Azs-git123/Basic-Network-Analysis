@@ -492,6 +492,7 @@ def display_results_summary(results):
 
     res = results['results']
 
+    # --- Bagian Metric Cards (Tetap Sama) ---
     col1, col2, col3, col4 = st.columns(4)
 
     with col1:
@@ -514,6 +515,18 @@ def display_results_summary(results):
         st.metric("🚨 Malicious IPs", f"{res.get('malicious_ips_found', 0):,}")
         st.markdown('</div>', unsafe_allow_html=True)
 
+    # --- TAMBAHAN: MODUL VERBOSE LOGS ---
+    # Jika server mengirimkan data 'logs', tampilkan di sini
+    if 'logs' in results and results['logs']:
+        st.divider()
+        with st.expander("📄 Detail Analysis Logs (Verbose Mode Active)", expanded=True):
+            st.info("Log ini menampilkan urutan kerja mesin analyzer secara mendalam.")
+            # Menggabungkan list log menjadi satu teks panjang
+            log_content = "\n".join(results['logs'])
+            # Menampilkan di dalam box kode agar rapi seperti terminal
+            st.code(log_content, language="log")
+
+    # --- Bagian Grafik (Tetap Sama) ---
     if 'protocols' in res:
         st.subheader("🌐 Protocol Distribution")
         protocols_df = pd.DataFrame(
