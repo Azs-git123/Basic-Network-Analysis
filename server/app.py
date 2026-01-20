@@ -12,13 +12,14 @@ import uuid
 import time
 from datetime import datetime
 import json
-
+import uuid
 from analyzer import PCAPAnalyzer
 from storage import StorageManager
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 app = Flask(__name__)
+app.json.sort_keys = False
 app.config['MAX_CONTENT_LENGTH'] = 500 * 1024 * 1024  # 500MB max file size
 app.config['UPLOAD_FOLDER'] = os.path.join(BASE_DIR, 'uploads')
 app.config['OUTPUT_FOLDER'] = os.path.join(BASE_DIR, 'outputs')
@@ -55,11 +56,11 @@ def health_check():
 def upload_pcap():
     """
     Upload PCAP file to server
-    
+
     Request: multipart/form-data
         - file: PCAP file
         - abuseipdb_key (optional): API key for reputation checking
-        
+
     Response:
         {
             "job_id": "uuid",
@@ -70,28 +71,28 @@ def upload_pcap():
     """
     if 'file' not in request.files:
         return jsonify({'error': 'No file provided'}), 400
-    
+
     file = request.files['file']
-    
+
     if file.filename == '':
         return jsonify({'error': 'No file selected'}), 400
-    
+
     if not allowed_file(file.filename):
         return jsonify({'error': 'Invalid file type. Allowed: .pcap, .pcapng, .cap'}), 400
-    
+
     # Generate job ID
     job_id = str(uuid.uuid4())
-    
+
     # Secure filename
     filename = secure_filename(file.filename)
-    
+
     # Save file
     filepath = storage.save_upload(job_id, file, filename)
     file_size = os.path.getsize(filepath)
-    
+
     # Get optional parameters
     abuseipdb_key = request.form.get('abuseipdb_key', None)
-    
+
     # Create job record
     with jobs_lock:
         jobs[job_id] = {
@@ -106,7 +107,7 @@ def upload_pcap():
             'results': None,
             'error': None
         }
-    
+
     return jsonify({
         'job_id': job_id,
         'filename': filename,
@@ -120,14 +121,14 @@ def upload_pcap():
 def start_analysis(job_id):
     """
     Start analysis for uploaded PCAP
-    
+
     Request Body (JSON):
         {
             "rules_dir": "rules/",  # optional
             "enable_reputation": true,  # optional
             "verbose": false  # optional
         }
-    
+
     Response:
         {
             "job_id": "uuid",
@@ -138,26 +139,26 @@ def start_analysis(job_id):
     with jobs_lock:
         if job_id not in jobs:
             return jsonify({'error': 'Job not found'}), 404
-        
+
         job = jobs[job_id]
-        
+
         if job['status'] != 'uploaded':
             return jsonify({
                 'error': f'Job already {job["status"]}',
                 'current_status': job['status']
             }), 400
-        
+
         # Get analysis options
         options = request.get_json() or {}
         rules_dir = options.get('rules_dir', 'rules')
         enable_reputation = options.get('enable_reputation', True)
         verbose = options.get('verbose', False)
-        
+
         # Update job status
         job['status'] = 'processing'
         job['started_at'] = datetime.now().isoformat()
         job['options'] = options
-    
+
     # Start analysis in background thread
     thread = threading.Thread(
         target=analyze_pcap_background,
@@ -165,7 +166,7 @@ def start_analysis(job_id):
     )
     thread.daemon = True
     thread.start()
-    
+
     return jsonify({
         'job_id': job_id,
         'status': 'processing',
@@ -180,29 +181,29 @@ def analyze_pcap_background(job_id, rules_dir, enable_reputation, verbose):
             job = jobs[job_id]
             filepath = job['filepath']
             abuseipdb_key = job.get('abuseipdb_key')
-        
+
         # Create analyzer
         analyzer = PCAPAnalyzer(
             rules_dir=rules_dir,
             abuseipdb_key=abuseipdb_key if enable_reputation else None,
             verbose=verbose
         )
-        
+
         # Create output directory for this job
         output_dir = storage.create_output_dir(job_id)
-        
+
         # Run analysis with progress callback
         def progress_callback(current, total, status):
             with jobs_lock:
                 jobs[job_id]['progress'] = int((current / total) * 100) if total > 0 else 0
                 jobs[job_id]['status_message'] = status
-        
+
         results = analyzer.analyze(
             pcap_file=filepath,
             output_dir=output_dir,
             progress_callback=progress_callback
         )
-        
+
         # Update job with results
         with jobs_lock:
             jobs[job_id]['status'] = 'completed'
@@ -210,7 +211,7 @@ def analyze_pcap_background(job_id, rules_dir, enable_reputation, verbose):
             jobs[job_id]['progress'] = 100
             jobs[job_id]['results'] = results
             jobs[job_id]['output_dir'] = output_dir
-        
+
     except Exception as e:
         # Handle errors
         with jobs_lock:
@@ -223,7 +224,7 @@ def analyze_pcap_background(job_id, rules_dir, enable_reputation, verbose):
 def get_status(job_id):
     """
     Get job status and progress
-    
+
     Response:
         {
             "job_id": "uuid",
@@ -235,16 +236,16 @@ def get_status(job_id):
     with jobs_lock:
         if job_id not in jobs:
             return jsonify({'error': 'Job not found'}), 404
-        
+
         job = jobs[job_id].copy()
-    
+
     # Remove sensitive data
     if 'abuseipdb_key' in job:
         job['abuseipdb_key'] = '***' if job['abuseipdb_key'] else None
-    
+
     if 'filepath' in job:
         del job['filepath']
-    
+
     return jsonify(job)
 
 
@@ -252,7 +253,7 @@ def get_status(job_id):
 def get_results(job_id):
     """
     Get analysis results
-    
+
     Response:
         {
             "job_id": "uuid",
@@ -268,21 +269,21 @@ def get_results(job_id):
     with jobs_lock:
         if job_id not in jobs:
             return jsonify({'error': 'Job not found'}), 404
-        
+
         job = jobs[job_id]
-        
+
         if job['status'] != 'completed':
             return jsonify({
                 'error': 'Analysis not completed',
                 'status': job['status']
             }), 400
-    
+
     # Get list of output files
     output_dir = job.get('output_dir')
     files = []
     if output_dir and os.path.exists(output_dir):
         files = os.listdir(output_dir)
-    
+
     return jsonify({
         'job_id': job_id,
         'status': 'completed',
@@ -296,30 +297,30 @@ def get_results(job_id):
 def download_file(job_id, filename):
     """
     Download specific log file
-    
+
     Example: GET /api/download/{job_id}/alert.log
     """
     with jobs_lock:
         if job_id not in jobs:
             return jsonify({'error': 'Job not found'}), 404
-        
+
         job = jobs[job_id]
-        
+
         if job['status'] != 'completed':
             return jsonify({'error': 'Analysis not completed'}), 400
-        
+
         output_dir = job.get('output_dir')
-    
+
     if not output_dir:
         return jsonify({'error': 'Output directory not found'}), 404
-    
+
     # Secure filename
     filename = secure_filename(filename)
     filepath = os.path.join(output_dir, filename)
-    
+
     if not os.path.exists(filepath):
         return jsonify({'error': 'File not found'}), 404
-    
+
     return send_file(filepath, as_attachment=True)
 
 
@@ -327,11 +328,11 @@ def download_file(job_id, filename):
 def list_jobs():
     """
     List all jobs
-    
+
     Query params:
         - status: filter by status (uploaded|processing|completed|failed)
         - limit: max number of results (default: 50)
-    
+
     Response:
         {
             "jobs": [...],
@@ -340,27 +341,27 @@ def list_jobs():
     """
     status_filter = request.args.get('status')
     limit = int(request.args.get('limit', 50))
-    
+
     with jobs_lock:
         job_list = list(jobs.values())
-    
+
     # Filter by status
     if status_filter:
         job_list = [j for j in job_list if j['status'] == status_filter]
-    
+
     # Sort by created_at (newest first)
     job_list.sort(key=lambda x: x['created_at'], reverse=True)
-    
+
     # Limit results
     job_list = job_list[:limit]
-    
+
     # Remove sensitive data
     for job in job_list:
         if 'abuseipdb_key' in job:
             job['abuseipdb_key'] = '***' if job['abuseipdb_key'] else None
         if 'filepath' in job:
             del job['filepath']
-    
+
     return jsonify({
         'jobs': job_list,
         'total': len(job_list)
@@ -371,7 +372,7 @@ def list_jobs():
 def delete_job(job_id):
     """
     Delete job and associated files
-    
+
     Response:
         {
             "message": "Job deleted successfully"
@@ -380,27 +381,70 @@ def delete_job(job_id):
     with jobs_lock:
         if job_id not in jobs:
             return jsonify({'error': 'Job not found'}), 404
-        
+
         job = jobs[job_id]
-    
+
     # Delete files
     storage.delete_job(job_id, job)
-    
+
     # Remove from jobs dict
     with jobs_lock:
         del jobs[job_id]
-    
+
     return jsonify({
         'message': 'Job deleted successfully',
         'job_id': job_id
     })
 
+@app.route('/api/upload_rules', methods=['POST'])
+def upload_rules():
+    """
+    Endpoint untuk menerima custom rules (.yaml) dari client
+    Disimpan di folder: rules/uploads/<unique_id>/
+    """
+    try:
+        if 'files' not in request.files:
+            return jsonify({'error': 'No files provided'}), 400
+
+        files = request.files.getlist('files')
+        if not files or files[0].filename == '':
+            return jsonify({'error': 'No selected files'}), 400
+
+        # 1. Buat folder unik untuk sesi upload ini
+        upload_id = str(uuid.uuid4())[:8]  # Contoh: a1b2c3d4
+        # Path relatif terhadap root project
+        target_dir = os.path.join('rules', 'uploads', upload_id)
+
+        # Buat folder fisik
+        os.makedirs(target_dir, exist_ok=True)
+
+        saved_files = []
+        for file in files:
+            if file and (file.filename.endswith('.yaml') or file.filename.endswith('.yml')):
+                filename = secure_filename(file.filename)
+                file_path = os.path.join(target_dir, filename)
+                file.save(file_path)
+                saved_files.append(filename)
+
+        if not saved_files:
+            return jsonify({'error': 'No valid YAML files found'}), 400
+
+        return jsonify({
+            'message': 'Rules uploaded successfully',
+            'upload_id': upload_id,
+            'rules_path': target_dir,  # Path ini yang nanti dipakai analyzer
+            'files_count': len(saved_files)
+        })
+
+    except Exception as e:
+        print(f"Error uploading rules: {e}")
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     # Create directories
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
     os.makedirs(app.config['OUTPUT_FOLDER'], exist_ok=True)
-    
+
     # Run server
     print("=" * 60)
     print("Network Analyzer Server")
@@ -408,5 +452,5 @@ if __name__ == '__main__':
     print(f"Server running at: http://0.0.0.0:5000")
     print(f"API Documentation: http://0.0.0.0:5000/api/health")
     print("=" * 60)
-    
+
     app.run(host='0.0.0.0', port=5000, debug=True, threaded=True)
