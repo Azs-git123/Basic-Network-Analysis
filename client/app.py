@@ -533,7 +533,7 @@ def display_results_summary(results):
     # Jika server mengirimkan data 'logs', tampilkan di sini
     if 'logs' in results and results['logs']:
         st.divider()
-        with st.expander("📄 Detail Analysis Logs (Verbose Mode Active)", expanded=True):
+        with st.expander("📄 Detail Analysis Logs", expanded=True):
             # Menggabungkan list log menjadi satu teks panjang
             log_content = "\n".join(results['logs'])
             # Menampilkan di dalam box kode agar rapi seperti terminal
