@@ -310,7 +310,7 @@ def main():
                         job_id,
                         rules_dir=final_rules_path, # <--- INI KUNCINYA
                         enable_reputation=enable_reputation,
-                        verbose=verbose_mode
+                        verbose=True
                     )
 
                     status_text.text("⚙️ Analysis in progress...")
