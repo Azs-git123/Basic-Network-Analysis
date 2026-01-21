@@ -114,13 +114,17 @@ def init_client(server_url):
 # =========================
 
 def main():
+
+    if st.session_state.client is None:
+        default_url = "https://gghz.pythonanywhere.com"
+        init_client(default_url)
     # Header
     st.markdown('<div class="main-header">🔍 Network Analyzer Client</div>', unsafe_allow_html=True)
 
     # =========================
     # Sidebar - Configuration
     # =========================
-    with st.sidebar:
+   with st.sidebar:
         st.header("⚙️ Configuration")
 
         # Server config
@@ -130,14 +134,24 @@ def main():
             help="URL of Network Analyzer Server"
         )
 
-        if st.button("🔌 Connect to Server", type="primary"):
+        # Logika tombol dinamis
+        button_label = "🔌 Re-connect to Server" if st.session_state.client else "🔌 Connect to Server"
+        
+        if st.button(button_label, type="primary"):
             with st.spinner("Connecting..."):
                 success, result = init_client(server_url)
                 if success:
                     st.success("✅ Connected to server")
-                    st.json(result)
+                    # Tampilan ringkas hasil health check
+                    st.toast(f"Server Status: {result.get('status', 'OK')}") 
                 else:
                     st.error(f"❌ Connection failed: {result}")
+
+        # Menampilkan status koneksi saat ini di sidebar
+        if st.session_state.client:
+            st.caption("🟢 Status: Connected to Backend")
+        else:
+            st.caption("🔴 Status: Disconnected")
 
         st.divider()
 
