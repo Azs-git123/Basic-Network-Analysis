@@ -124,7 +124,7 @@ def main():
     # =========================
     # Sidebar - Configuration
     # =========================
-   with st.sidebar:
+     with st.sidebar:
         st.header("⚙️ Configuration")
 
         # Server config
