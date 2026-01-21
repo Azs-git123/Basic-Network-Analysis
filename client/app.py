@@ -150,7 +150,7 @@ def main():
 
         # Menampilkan indikator status di bawah tombol
         if st.session_state.client:
-            st.caption("🟢 Status: Connected to Backend")
+            st.caption("🟢 Status: Connected to server")
         else:
             st.caption("🔴 Status: Disconnected")
 
