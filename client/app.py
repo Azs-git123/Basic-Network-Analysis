@@ -15,7 +15,7 @@ import pandas as pd
 # Page configuration
 # =========================
 st.set_page_config(
-    page_title="Network Analyzer Client",
+    page_title="Initial Network Analysis",
     page_icon="🔍",
     layout="wide",
     initial_sidebar_state="expanded"
