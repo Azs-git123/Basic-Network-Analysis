@@ -124,36 +124,36 @@ def main():
     # =========================
     # Sidebar - Configuration
     # =========================
-       with st.sidebar:
-            st.header("⚙️ Configuration")
-    
-            # Server config
-            server_url = st.text_input(
-                "Server URL",
-                value="https://gghz.pythonanywhere.com", 
-                help="URL of Network Analyzer Server"
-            )
-    
-            # Logika tombol dinamis
-            button_label = "🔌 Re-connect to Server" if st.session_state.client else "🔌 Connect to Server"
-            
-            if st.button(button_label, type="primary"):
-                with st.spinner("Connecting..."):
-                    success, result = init_client(server_url)
-                    if success:
-                        st.success("✅ Connected to server")
-                        # Tampilan ringkas hasil health check
-                        st.toast(f"Server Status: {result.get('status', 'OK')}") 
-                    else:
-                        st.error(f"❌ Connection failed: {result}")
-    
-            # Menampilkan status koneksi saat ini di sidebar
-            if st.session_state.client:
-                st.caption("🟢 Status: Connected to Backend")
-            else:
-                st.caption("🔴 Status: Disconnected")
-    
-            st.divider()
+   with st.sidebar:
+        st.header("⚙️ Configuration")
+
+        # Server config
+        server_url = st.text_input(
+            "Server URL",
+            value="https://gghz.pythonanywhere.com", 
+            help="URL of Network Analyzer Server"
+        )
+
+        # Logika tombol dinamis
+        button_label = "🔌 Re-connect to Server" if st.session_state.client else "🔌 Connect to Server"
+        
+        if st.button(button_label, type="primary"):
+            with st.spinner("Connecting..."):
+                success, result = init_client(server_url)
+                if success:
+                    st.success("✅ Connected to server")
+                    # Tampilan ringkas hasil health check
+                    st.toast(f"Server Status: {result.get('status', 'OK')}") 
+                else:
+                    st.error(f"❌ Connection failed: {result}")
+
+        # Menampilkan status koneksi saat ini di sidebar
+        if st.session_state.client:
+            st.caption("🟢 Status: Connected to Backend")
+        else:
+            st.caption("🔴 Status: Disconnected")
+
+        st.divider()
 
         # AbuseIPDB Configuration
         st.subheader("🛡️ AbuseIPDB")
