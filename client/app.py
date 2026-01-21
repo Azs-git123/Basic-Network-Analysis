@@ -172,7 +172,6 @@ def main():
         st.subheader("🔧 Analysis Options")
 
         enable_reputation = st.checkbox("Enable IP Reputation", value=True)
-        verbose_mode = st.checkbox("Verbose Mode", value=False)
 
         # =========================
         # Rules Configuration (UPDATED LOGIC)
