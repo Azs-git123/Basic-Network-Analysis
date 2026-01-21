@@ -120,7 +120,7 @@ def main():
         init_client(default_url)
 
     # Header
-    st.markdown('<div class="main-header">🔍 Network Analyzer Client</div>', unsafe_allow_html=True)
+    st.markdown('<div class="main-header">🔍 Initial Network Analysis</div>', unsafe_allow_html=True)
 
     # =========================
     # Sidebar - Configuration
