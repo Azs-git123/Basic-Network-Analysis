@@ -14,6 +14,22 @@ Gunakan opsi ini jika ingin menjalankan aplikasi di mesin lokal
     pip install -r requirements.txt
 
 Jalankan server
+    
     python server/app.py
 
 Jalankan Client
+
+    streamlit run client/app.py
+
+Struktur project
+
+    Basic-Network-Analysis
+    ├── client/              # Streamlit Web Interface
+    │   └── app.py           # Main UI Logic
+    ├── server/              # Flask Backend Engine
+    │   ├── app.py           # REST API Endpoints
+    │   ├── analyzer.py      # Core Analysis Logic
+    │   └── core/            # Parser & Engine Modules
+    ├── rules/               # Detection Rules (YAML)
+    ├── uploads/             # Temporary PCAP Storage
+    └── outputs/             # Analysis Reports & Logs
