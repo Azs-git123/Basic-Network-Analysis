@@ -21,15 +21,32 @@ Jalankan Client
 
     streamlit run client/app.py
 
+Update database
+    
+    python3    core/intel_updater.py
+
 Struktur project
 
-    Basic-Network-Analysis
-    ├── client/              # Streamlit Web Interface
-    │   └── app.py           # Main UI Logic
-    ├── server/              # Flask Backend Engine
-    │   ├── app.py           # REST API Endpoints
-    │   ├── analyzer.py      # Core Analysis Logic
-    │   └── core/            # Parser & Engine Modules
-    ├── rules/               # Detection Rules (YAML)
-    ├── uploads/             # Temporary PCAP Storage
-    └── outputs/             # Analysis Reports & Logs
+    basic-network-analysis        .
+    ├── client/              # Antarmuka Pengguna (Streamlit)
+    │   ├── app.py           # Main UI Dashboard
+    │   └── client.py        # API Wrapper untuk komunikasi server
+    ├── core/                # Mesin Analisis Inti (Backend Logic)
+    │   ├── engine.py        # Rule processing engine
+    │   ├── parser.py        # Packet decomposition & feature extraction
+    │   ├── reader.py        # PCAP/PCAPNG file reader
+    │   ├── reputation.py    # IP threat intelligence logic
+    │   └── writer.py        # Output & Alert logger
+    ├── data/                # Database Pendukung
+    │   └── threat_intel.db  # Local threat database
+    ├── rules/               # Definisi Deteksi Serangan (YAML)
+    │   ├── malware_behavior.yaml
+    │   ├── network_attacks.yaml
+    │   └── web_attacks.yaml
+    ├── server/              # REST API Server (Flask)
+    │   ├── analyzer.py      # Analyzer coordinator
+    │   ├── app.py           # API Endpoints
+    │   └── storage.py       # Upload & output management
+    ├── requirements.txt     # Daftar dependensi Python
+    └── README.md            # Dokumentasi proyek
+
