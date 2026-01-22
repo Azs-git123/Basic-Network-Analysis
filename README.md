@@ -6,11 +6,14 @@ Anda dapat mencoba aplikasi ini secara langsung tanpa instalasi melalui tautan b
 🛠️ Deployment Guide
 Option 1: Manual Run (Local / Linux)
 
-Gunakan opsi ini jika ingin menjalankan aplikasi di mesin lokal atau laptop laboratorium.
+Gunakan opsi ini jika ingin menjalankan aplikasi di mesin lokal
 
     Clone & Setup Environment
     git clone https://github.com/Azs-git123/Basic-Network-Analysis/
     cd Basic-Network-Analysis
     pip install -r requirements.txt
 
+Jalankan server
     python server/app.py
+
+Jalankan Client
