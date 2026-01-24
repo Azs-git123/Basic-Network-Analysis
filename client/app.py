@@ -561,7 +561,7 @@ def display_jobs_table(jobs):
     jobs_data = []
     for job in jobs:
         jobs_data.append({
-            'Job ID': job['job_id'][:16] + "...",
+            'Job ID': job['job_id'],
             'Filename': job.get('filename', 'N/A'),
             'Status': job['status'],
             'Created': job.get('created_at', 'N/A')[:19],
