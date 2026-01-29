@@ -506,55 +506,91 @@ def display_results_summary(results):
 
     res = results['results']
 
-    # --- Bagian Metric Cards (Tetap Sama) ---
+   
     col1, col2, col3, col4 = st.columns(4)
 
     with col1:
-        st.markdown('<div class="metric-card">', unsafe_allow_html=True)
         st.metric("📦 Total Packets", f"{res.get('total_packets', 0):,}")
-        st.markdown('</div>', unsafe_allow_html=True)
-
     with col2:
-        st.markdown('<div class="metric-card">', unsafe_allow_html=True)
         st.metric("⚠️ Alerts", f"{res.get('alerts_generated', 0):,}")
-        st.markdown('</div>', unsafe_allow_html=True)
-
     with col3:
-        st.markdown('<div class="metric-card">', unsafe_allow_html=True)
         st.metric("🔍 Rules Applied", f"{res.get('rules_applied', 0):,}")
-        st.markdown('</div>', unsafe_allow_html=True)
-
     with col4:
-        st.markdown('<div class="metric-card">', unsafe_allow_html=True)
         st.metric("🚨 Malicious IPs", f"{res.get('malicious_ips_found', 0):,}")
-        st.markdown('</div>', unsafe_allow_html=True)
 
-    # --- TAMBAHAN: MODUL VERBOSE LOGS ---
-    # Jika server mengirimkan data 'logs', tampilkan di sini
-    if 'logs' in results and results['logs']:
-        st.divider()
-        with st.expander("📄 Detail Analysis Logs", expanded=True):
-            # Menggabungkan list log menjadi satu teks panjang
-            log_content = "\n".join(results['logs'])
-            # Menampilkan di dalam box kode agar rapi seperti terminal
-            st.code(log_content, language="log")
+  
+    st.divider()
+    st.subheader("🚨 Alerts Detected")
 
-    # --- Bagian Grafik (Tetap Sama) ---
-    if 'protocols' in res:
-        st.subheader("🌐 Protocol Distribution")
-        protocols_df = pd.DataFrame(
-            list(res['protocols'].items()),
-            columns=['Protocol', 'Count']
-        )
-        st.bar_chart(protocols_df.set_index('Protocol'))
+    alerts = results.get("alerts", [])
 
+    if not alerts:
+        st.success("✅ No alerts detected by current rules.")
+        return
+
+    alerts_df = pd.DataFrame(alerts)
+
+    severity_rank = {"critical": 0, "high": 1, "medium": 2, "low": 3}
+    alerts_df["severity_rank"] = alerts_df["severity"].map(severity_rank).fillna(9)
+    alerts_df = alerts_df.sort_values("severity_rank")
+
+    st.dataframe(
+        alerts_df[
+            ["alert_id", "rule_name", "severity", "packet_index", "protocol", "src_ip", "dst_ip"]
+        ],
+        use_container_width=True,
+        height=300
+    )
+
+ 
+    st.divider()
+    st.subheader("🔍 Alert Detail")
+
+    alert_ids = alerts_df["alert_id"].tolist()
+
+    selected_alert = st.selectbox(
+        "Pilih Alert untuk melihat detail:",
+        options=alert_ids
+    )
+
+    alert_details = results.get("alert_details", {})
+
+    if selected_alert and selected_alert in alert_details:
+        detail = alert_details[selected_alert]
+
+        with st.expander(f"📄 Detail Alert {selected_alert}", expanded=True):
+            st.markdown("### 🧾 Rule Information")
+            st.json(detail.get("rule", {}))
+
+            st.markdown("### 📦 Packet Information")
+            st.json(detail.get("packet", {}))
+
+            st.markdown("### 📜 Payload Snippet")
+            payload = detail.get("payload", {})
+            st.code(payload.get("snippet", ""), language="text")
+            st.caption(f"Payload length: {payload.get('length', 0)} bytes")
+
+   
     if 'top_rules_matched' in res and res['top_rules_matched']:
+        st.divider()
         st.subheader("🎯 Top Rules Matched")
+
         rules_df = pd.DataFrame(
             list(res['top_rules_matched'].items()),
             columns=['Rule', 'Matches']
         )
-        st.dataframe(rules_df, use_container_width=True)
+        st.bar_chart(rules_df.set_index('Rule'))
+
+  
+    if 'protocols' in res and res['protocols']:
+        st.divider()
+        st.subheader("🌐 Protocol Distribution")
+
+        proto_df = pd.DataFrame(
+            list(res['protocols'].items()),
+            columns=['Protocol', 'Count']
+        )
+        st.bar_chart(proto_df.set_index('Protocol'))
 
 
 def display_jobs_table(jobs):
