@@ -579,8 +579,7 @@ def display_jobs_table(jobs):
         }
         return colors.get(val, '')
 
-    # PERBAIKAN: Ganti applymap dengan map (baris 582)
-    styled_df = df.style.map(color_status, subset=['Status'])
+    styled_df = df.style.applymap(color_status, subset=['Status'])
     st.dataframe(styled_df, use_container_width=True)
 
 
